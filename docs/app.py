@@ -1,288 +1,4 @@
-API
-===
 
-.. module:: flask
-
-This part of the documentation covers all the interfaces of Flask. For
-parts where Flask depends on external libraries, we document the most
-important right here and provide links to the canonical documentation.
-
-
-Application Object
-------------------
-
-.. autoclass:: Flask
-   :members:
-   :inherited-members:
-
-
-Blueprint Objects
------------------
-
-.. autoclass:: Blueprint
-   :members:
-   :inherited-members:
-
-Incoming Request Data
----------------------
-
-.. autoclass:: Request
-    :members:
-    :inherited-members:
-    :exclude-members: json_module
-
-.. attribute:: request
-
-   To access incoming request data, you can use the global `request`
-   object. Flask parses incoming request data for you and gives you
-   access to it through that global object. Internally Flask makes
-   sure that you always get the correct data for the active thread if you
-   are in a multithreaded environment.
-
-   This is a proxy. See :ref:`notes-on-proxies` for more information.
-
-   The request object is an instance of a :class:`~flask.Request`.
-
-
-Response Objects
-----------------
-
-.. autoclass:: flask.Response
-    :members:
-    :inherited-members:
-    :exclude-members: json_module
-
-Sessions
---------
-
-If you have set :attr:`Flask.secret_key` (or configured it from
-:data:`SECRET_KEY`) you can use sessions in Flask applications. A session makes
-it possible to remember information from one request to another. The way Flask
-does this is by using a signed cookie. The user can look at the session
-contents, but can't modify it unless they know the secret key, so make sure to
-set that to something complex and unguessable.
-
-To access the current session you can use the :class:`session` object:
-
-.. class:: session
-
-   The session object works pretty much like an ordinary dict, with the
-   difference that it keeps track of modifications.
-
-   This is a proxy. See :ref:`notes-on-proxies` for more information.
-
-   The following attributes are interesting:
-
-   .. attribute:: new
-
-      ``True`` if the session is new, ``False`` otherwise.
-
-   .. attribute:: modified
-
-      ``True`` if the session object detected a modification. Be advised
-      that modifications on mutable structures are not picked up
-      automatically, in that situation you have to explicitly set the
-      attribute to ``True`` yourself. Here an example::
-
-          # this change is not picked up because a mutable object (here
-          # a list) is changed.
-          session['objects'].append(42)
-          # so mark it as modified yourself
-          session.modified = True
-
-   .. attribute:: permanent
-
-      If set to ``True`` the session lives for
-      :attr:`~flask.Flask.permanent_session_lifetime` seconds. The
-      default is 31 days. If set to ``False`` (which is the default) the
-      session will be deleted when the user closes the browser.
-
-
-Session Interface
------------------
-
-.. versionadded:: 0.8
-
-The session interface provides a simple way to replace the session
-implementation that Flask is using.
-
-.. currentmodule:: flask.sessions
-
-.. autoclass:: SessionInterface
-   :members:
-
-.. autoclass:: SecureCookieSessionInterface
-   :members:
-
-.. autoclass:: SecureCookieSession
-   :members:
-
-.. autoclass:: NullSession
-   :members:
-
-.. autoclass:: SessionMixin
-   :members:
-
-.. admonition:: Notice
-
-    The :data:`PERMANENT_SESSION_LIFETIME` config can be an integer or ``timedelta``.
-    The :attr:`~flask.Flask.permanent_session_lifetime` attribute is always a
-    ``timedelta``.
-
-
-Test Client
------------
-
-.. currentmodule:: flask.testing
-
-.. autoclass:: FlaskClient
-   :members:
-
-
-Test CLI Runner
----------------
-
-.. currentmodule:: flask.testing
-
-.. autoclass:: FlaskCliRunner
-    :members:
-
-
-Application Globals
--------------------
-
-.. currentmodule:: flask
-
-To share data that is valid for one request only from one function to
-another, a global variable is not good enough because it would break in
-threaded environments. Flask provides you with a special object that
-ensures it is only valid for the active request and that will return
-different values for each request. In a nutshell: it does the right
-thing, like it does for :class:`request` and :class:`session`.
-
-.. data:: g
-
-    A namespace object that can store data during an
-    :doc:`application context </appcontext>`. This is an instance of
-    :attr:`Flask.app_ctx_globals_class`, which defaults to
-    :class:`ctx._AppCtxGlobals`.
-
-    This is a good place to store resources during a request. For
-    example, a ``before_request`` function could load a user object from
-    a session id, then set ``g.user`` to be used in the view function.
-
-    This is a proxy. See :ref:`notes-on-proxies` for more information.
-
-    .. versionchanged:: 0.10
-        Bound to the application context instead of the request context.
-
-.. autoclass:: flask.ctx._AppCtxGlobals
-    :members:
-
-
-Useful Functions and Classes
-----------------------------
-
-.. data:: current_app
-
-    A proxy to the application handling the current request. This is
-    useful to access the application without needing to import it, or if
-    it can't be imported, such as when using the application factory
-    pattern or in blueprints and extensions.
-
-    This is only available when an
-    :doc:`application context </appcontext>` is pushed. This happens
-    automatically during requests and CLI commands. It can be controlled
-    manually with :meth:`~flask.Flask.app_context`.
-
-    This is a proxy. See :ref:`notes-on-proxies` for more information.
-
-.. autofunction:: has_request_context
-
-.. autofunction:: copy_current_request_context
-
-.. autofunction:: has_app_context
-
-.. autofunction:: url_for
-
-.. autofunction:: abort
-
-.. autofunction:: redirect
-
-.. autofunction:: make_response
-
-.. autofunction:: after_this_request
-
-.. autofunction:: send_file
-
-.. autofunction:: send_from_directory
-
-
-Message Flashing
-----------------
-
-.. autofunction:: flash
-
-.. autofunction:: get_flashed_messages
-
-
-JSON Support
-------------
-
-.. module:: flask.json
-
-Flask uses Python's built-in :mod:`json` module for handling JSON by
-default. The JSON implementation can be changed by assigning a different
-provider to :attr:`flask.Flask.json_provider_class` or
-:attr:`flask.Flask.json`. The functions provided by ``flask.json`` will
-use methods on ``app.json`` if an app context is active.
-
-Jinja's ``|tojson`` filter is configured to use the app's JSON provider.
-The filter marks the output with ``|safe``. Use it to render data inside
-HTML ``<script>`` tags.
-
-.. sourcecode:: html+jinja
-
-    <script>
-        const names = {{ names|tojson }};
-        renderChart(names, {{ axis_data|tojson }});
-    </script>
-
-.. autofunction:: jsonify
-
-.. autofunction:: dumps
-
-.. autofunction:: dump
-
-.. autofunction:: loads
-
-.. autofunction:: load
-
-.. autoclass:: flask.json.provider.JSONProvider
-    :members:
-    :member-order: bysource
-
-.. autoclass:: flask.json.provider.DefaultJSONProvider
-    :members:
-    :member-order: bysource
-
-.. automodule:: flask.json.tag
-
-
-Template Rendering
-------------------
-
-.. currentmodule:: flask
-
-.. autofunction:: render_template
-
-.. autofunction:: render_template_string
-
-.. autofunction:: stream_template
-
-.. autofunction:: stream_template_string
-
-.. autofunction:: get_template_attribute
 
 Configuration
 -------------
@@ -715,3 +431,27 @@ Command Line Interface
 .. autodata:: run_command
 
 .. autodata:: shell_command
+from flask import Flask, request, jsonify
+from cosmic_compress import CosmicCompress
+import numpy as np
+
+app = Flask(__name__)
+compressor = CosmicCompress()
+
+@app.route('/compress', methods=['POST'])
+def compress():
+    data = request.get_json(force=True).get('data', [])
+    algorithm = request.get_json(force=True).get('algorithm', 'zlib')
+    data_bytes = np.array(data, dtype=np.uint8).tobytes()
+    compressed_data = compressor.compress(data_bytes, algorithm=algorithm)
+    return jsonify({"compressed_data": list(compressed_data)})
+
+@app.route('/decompress', methods=['POST'])
+def decompress():
+    compressed_data = bytes(request.get_json(force=True).get('compressed_data', []))
+    algorithm = request.get_json(force=True).get('algorithm', 'zlib')
+    decompressed_data = compressor.decompress(compressed_data, algorithm=algorithm)
+    return jsonify({"data": list(decompressed_data)})
+
+if __name__ == '__main__':
+    app.run(debug=True)
